@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "supcom_profiler_converter"
+version = "0.1"
+requires-python = ">=3.8"
+authors = [
+  {name = "delins"},
+]
+description = "Converts the Lua profiler output to the stackcollapse format"
+license = "MIT"
+
+[project.scripts]
+supcom_profiler_convert = "supcom_profiler_converter.bin.main:main"
