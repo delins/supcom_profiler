@@ -32,6 +32,19 @@ for analysis.
 You can find an example profiler output in "example/log.txt", and the corresponding stackcollapse
 file in "example/profile_stackcollapse.txt". 
 
+## Interpreting results
+
+### Overstimation of cost of `next`, `LOUDSORT` (`table.sort`) and similar
+
+The profiler overestimates the cost of these functions and/or the function they're in. See for instance the cost of this (here unnamed but it's `AIGetReclaimablesAroundLocation `) function:
+![image](https://github.com/user-attachments/assets/a60616ff-9e5a-46b0-ada1-8f924fb2e706)
+
+This function consists of little more than a range based loop (`for k,v in thing do`), which Lua appears to implement by implicitly calling `next` for each item. This means a lot of function calls are made which is probably fine under normal circumstances, but because of the constant overhead that profiling adds to function calls, this ends up looking disproportionally expensive in the profiling output. Some of this cost may have been attributed to `next`, but most is added to the "self" cost (the area of the big green bar that doesn't have any children).
+
+By replacing the range based loop with a simple indexing loop (`for i = 1, length do`) the performance of `AIGetReclaimablesAroundLocation` seems to drastically improve - during profiling. In reality, if we measure by simply recording wallclock time with the profiler turned off, it makes little or no difference.
+
+For `LOUDSORT` (which is `table.sort`) the profiler probably overestimates the cost as well, since a function call is made for every `a < b` comparison the sorting function performs. The difference with range based loops is that all added cost incurred is attributed to `LOUDSORT` itself instead of the "self" cost of the containing function.
+
 The rest of the text below is about the Lua code details.
 
 ## Implementation details for the Lua code
